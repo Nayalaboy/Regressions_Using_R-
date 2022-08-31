@@ -147,7 +147,7 @@ plot(pls_model)
 plot(varImp(pls_model))
 
 ```
-
+## g.
 Based on different RMSE and Rsquared found for different model, we can say that the linear, the lasso and the PLS model perform similarly(Rsquared~0.93). On the other hand, the ridge and pcr model perform similarly too(Rquared~83). We can conclude that the linear, the Lasso and the PLS model are more accurate, compared to other model.
 
 
