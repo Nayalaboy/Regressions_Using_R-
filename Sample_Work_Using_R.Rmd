@@ -1,0 +1,183 @@
+---
+title: "Homework from the book ISLR(Introduction to Statistical Learning with R) Chapter 6 "
+author: "ANU ZAN"
+date: "04/25/2022"
+output:
+  pdf_document: 
+    df_print: paged
+---
+
+
+```{r, warning = FALSE, message=FALSE}
+# This chunk is reserved for loading packages.
+library (glmnet)
+library(caret)
+library(tidyverse)
+library(dplyr)
+```
+
+**Book link:**  https://www.statlearning.com/
+
+## Exercise 9
+
+In this exercise, we will predict the number of applications received
+using the other variables in the College data set.$$\\$$
+(a) Split the data set into a training set and a test set.$$\\$$
+(b) Fit a linear model using least squares on the training set, and
+report the test error obtained.$$\\$$
+(c) Fit a ridge regression model on the training set, with $$\lambda$$ chosen
+by cross-validation. Report the test error obtained.$$\\$$
+(d) Fit a lasso model on the training set, with  $$\lambda$$ chosen by cross validation. Report the test error obtained, along with the number of non-zero coefficient estimates. $$\\$$
+(e) Fit a PCR model on the training set, with M chosen by cross validation. Report the test error obtained, along with the value
+of M selected by cross-validation.$$\\$$
+(f) Fit a PLS model on the training set, with M chosen by cross validation. Report the test error obtained, along with the value
+of M selected by cross-validation.$$\\$$
+(g) Comment on the results obtained. How accurately can we pre dict the number of college applications received? Is there much
+difference among the test errors resulting from these five approaches?
+
+
+## Solution
+
+### a.
+
+```{r}
+library(ISLR2)
+data("College")
+summary(College)
+set.seed(1)
+
+inTrain <-createDataPartition(College$Apps, p = 0.6, list = FALSE)
+
+training <- College[inTrain,]
+testing <- College[-inTrain,]
+
+preObj <- preProcess(training, method = c('center', 'scale'))
+
+training <- predict(preObj, training)
+testing <- predict(preObj, testing)
+
+y_train <- training$Apps
+y_test <- testing$Apps
+
+lm1 <- dummyVars(Apps ~ ., data = training)
+x_train <- predict(lm1, training)
+x_test <- predict(lm1, testing)
+
+```
+
+
+
+### b. 
+
+```{r}
+lin_model <- lm(Apps ~ ., data = training)
+
+pred <- predict(lin_model, testing)
+
+lin_info <- postResample(pred, testing$Apps)
+lin_info
+```
+
+
+
+### c.  
+
+```{r}
+anyNA(x_train)
+anyNA(y_train)
+ridge_fit <- train(x = x_train, y = y_train,
+                   method = 'glmnet', 
+                   trControl = trainControl(method = 'cv',number = 10),
+                   tuneGrid = expand.grid(alpha = 0,
+                                          lambda = seq(0, 10e2, length.out = 20)))
+ridge_info <- postResample(predict(ridge_fit, x_test), y_test)
+ridge_info
+coef(ridge_fit$finalModel, ridge_fit$bestTune$lambda)
+plot(ridge_fit)
+plot(varImp(ridge_fit))
+
+```
+
+
+
+## d.  
+
+```{r}
+
+lasso_fit <- train(x = x_train, y = y_train,
+                   method = 'glmnet', 
+                   trControl = trainControl(method = 'cv',number = 10),
+                   tuneGrid = expand.grid(alpha = 1,
+                                          lambda = seq(0.0001, 2, length.out = 40)))
+lasso_info <- postResample(predict(lasso_fit, x_test), y_test)
+lasso_info
+coef(lasso_fit$finalModel, lasso_fit$bestTune$lambda)
+
+plot(lasso_fit)
+
+```
+
+
+
+### e. 
+
+```{r}
+pcr_model <- train(x = x_train, y = y_train,
+                   method = 'pcr',
+                   trControl = trainControl(method = 'cv', number = 10),
+                   tuneGrid = expand.grid(ncomp = 1:10))
+(pcr_info <- postResample(predict(pcr_model, x_test), y_test))
+coef(pcr_model$finalModel)
+plot(pcr_model)
+plot(varImp(pcr_model))
+
+```
+
+
+## f.
+
+```{r}
+pls_model <- train(x = x_train, y = y_train,
+                   method = 'pls',
+                   trControl = trainControl(method = 'cv', number = 10),
+                   tuneGrid = expand.grid(ncomp = 1:10))
+(pls_info <- postResample(predict(pls_model, x_test), y_test))
+coef(pls_model$finalModel)
+plot(pls_model)
+plot(varImp(pls_model))
+
+```
+
+Based on different RMSE and Rsquared found for different model, we can say that the linear, the lasso and the PLS model perform similarly(Rsquared~0.93). On the other hand, the ridge and pcr model perform similarly too(Rquared~83). We can conclude that the linear, the Lasso and the PLS model are more accurate, compared to other model.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
